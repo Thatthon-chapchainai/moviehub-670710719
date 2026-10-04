@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../api/backend';
+
 // TODO ขั้นที่ 2: import { useNavigate } from 'react-router-dom' และ import { useAuth } from '../auth/AuthContext'
 
 function Login() {

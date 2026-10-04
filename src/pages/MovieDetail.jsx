@@ -61,11 +61,7 @@ function MovieDetail() {
   }, [id]);
 
   // TODO ขั้นที่ 3 (ข): ส่งรีวิวจริง
-  async function handleReviewSubmit(text) {
-    //   const saved = await postReview(id, text, token);
-    //   แล้วเติมรีวิวใหม่เข้าไปหน้าสุดของ reviews ด้วย spread (ไม่ push) ใช้ชื่อจาก member ใน useAuth()
-    throw new Error('ยังไม่ได้ต่อ API ส่งรีวิว (ขั้นที่ 3)');
-  }
+  
 
   if (status === 'loading') {
     return (
