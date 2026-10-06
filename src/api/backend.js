@@ -69,5 +69,5 @@ export async function getMovies() {
   return data.items;
 }
 export async function getMovie(movieId) {
-  return apiFetch('/api/movies/$[movieId]');
+  return apiFetch(`/api/movies/${movieId}`);
 }
