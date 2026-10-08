@@ -1,14 +1,42 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-// TODO ขั้นที่ 5 (Lab): import { putVote, addToWishlist, removeFromWishlist } from '../api/backend';
+import { addToWishlist, getWishlist, removeFromWishlist } from '../api/backend';
+// TODO ขั้นที่ 5 (Lab): import putVote for saving ratings.
 
 // แถบปุ่มใต้ชื่อหนัง: ให้คะแนน 1 ถึง 10 และปุ่มเพิ่มเข้า wishlist (ต้อง login)
 function MovieActions({ movieId }) {
-  const { isLoggedIn } = useAuth();              // TODO ขั้นที่ 5 (Lab): ดึง token มาด้วย เพื่อส่งให้ putVote / addToWishlist
+  const { isLoggedIn, token } = useAuth();
   const [myScore, setMyScore] = useState(null);
   const [inWishlist, setInWishlist] = useState(false);
   const [message, setMessage] = useState(null);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [wishlistSaving, setWishlistSaving] = useState(false);
+
+  useEffect(() => {
+    let ignore = false;
+
+    if (!isLoggedIn || !token) {
+      setInWishlist(false);
+      setWishlistLoading(false);
+      return () => { ignore = true; };
+    }
+
+    setWishlistLoading(true);
+    setMessage(null);
+    getWishlist(token)
+      .then(data => {
+        if (!ignore) setInWishlist(data.items.some(item => item.id === Number(movieId)));
+      })
+      .catch(err => {
+        if (!ignore) setMessage(err.message);
+      })
+      .finally(() => {
+        if (!ignore) setWishlistLoading(false);
+      });
+
+    return () => { ignore = true; };
+  }, [isLoggedIn, movieId, token]);
 
   if (!isLoggedIn) {
     return (
@@ -25,9 +53,20 @@ function MovieActions({ movieId }) {
   }
 
   async function handleWishlist() {
-    // TODO ขั้นที่ 5 (Lab): ถ้า inWishlist ให้ await removeFromWishlist ไม่งั้น await addToWishlist แล้วค่อยสลับค่า
-    setInWishlist(!inWishlist);
-    setMessage('ยังไม่ได้ส่งไป API (ขั้นที่ 5) เปิดหน้า "อยากดู" จะไม่เจอเรื่องนี้');
+    setWishlistSaving(true);
+    setMessage(null);
+    try {
+      if (inWishlist) {
+        await removeFromWishlist(movieId, token);
+      } else {
+        await addToWishlist(movieId, token);
+      }
+      setInWishlist(!inWishlist);
+    } catch (err) {
+      setMessage(err.message);
+    } finally {
+      setWishlistSaving(false);
+    }
   }
 
   return (
@@ -42,10 +81,13 @@ function MovieActions({ movieId }) {
           </button>
         ))}
       </div>
-      <button onClick={handleWishlist}
+      <button onClick={handleWishlist} disabled={wishlistLoading || wishlistSaving}
+              aria-pressed={inWishlist}
               className={'rounded-lg border px-4 py-2 text-sm ' +
-                (inWishlist ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-emerald-200 bg-white text-slate-600 hover:bg-emerald-50')}>
-        {inWishlist ? '❤️ อยู่ในรายการที่อยากดูแล้ว' : '🤍 เพิ่มเข้ารายการที่อยากดู'}
+                (inWishlist ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-emerald-200 bg-white text-slate-600 hover:bg-emerald-50') +
+                ((wishlistLoading || wishlistSaving) ? ' cursor-wait opacity-60' : '')}>
+        {wishlistLoading ? 'กำลังโหลดรายการที่อยากดู…' :
+          inWishlist ? '❤️ อยู่ในรายการที่อยากดูแล้ว' : '🤍 เพิ่มเข้ารายการที่อยากดู'}
       </button>
       {message && <p className="text-sm text-slate-500">{message}</p>}
     </div>
